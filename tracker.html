@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expense Tracker</title>
+  <style>
+    body {
+  font-family: Arial, sans-serif;
+}
+
+.container {
+  max-width: 400px;
+  margin: 50px auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+h1, h2 {
+  text-align: center;
+}
+
+div {
+  margin-bottom: 10px;
+}
+
+button {
+  padding: 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+#transactions {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+    </style>
+  
+</head>
+<body>
+  <div class="container">
+    <h1>Expense Tracker</h1>
+    <div>
+      <label for="type">Type:</label>
+      <select id="type">
+        <option value="income">Income</option>
+        <option value="expense">Expense</option>
+      </select>
+    </div>
+    <div>
+      <label for="amount">Amount:</label>
+      <input type="text" id="amount" placeholder="Enter amount">
+    </div>
+    <div>
+      <label for="description">Description:</label>
+      <input type="text" id="description" placeholder="Enter description">
+    </div>
+    <button onclick="addTransaction()">Add Transaction</button>
+    <h2>Balance: <span id="balance">0</span></h2>
+    <div id="transactions"></div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+  loadTransactions();
+});
+
+function loadTransactions() {
+  fetch('/api/transactions')
+    .then(response => response.json())
+    .then(transactions => {
+      displayTransactions(transactions);
+      updateBalance(transactions);
+    })
+    .catch(error => console.error('Error loading transactions:', error));
+}
+
+function displayTransactions(transactions) {
+  const transactionsDiv = document.getElementById('transactions');
+  transactionsDiv.innerHTML = '';
+
+  transactions.forEach(transaction => {
+    const transactionDiv = document.createElement('div');
+    transactionDiv.innerHTML = `
+      <strong>${transaction.type.toUpperCase()}</strong> - ${transaction.description} ($${transaction.amount}) - ${transaction.date}
+    `;
+    transactionsDiv.appendChild(transactionDiv);
+  });
+}
+
+function updateBalance(transactions) {
+  const balanceSpan = document.getElementById('balance');
+  const balance = transactions.reduce((total, transaction) => {
+    return transaction.type === 'income' ? total + transaction.amount : total - transaction.amount;
+  }, 0);
+
+  balanceSpan.textContent = balance.toFixed(2);
+}
+
+function addTransaction() {
+  const type = document.getElementById('type').value;
+  const amount = document.getElementById('amount').value;
+  const description = document.getElementById('description').value;
+
+  fetch('/api/transactions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ type, amount, description }),
+  })
+    .then(response => response.json())
+    .then(transaction => {
+      loadTransactions();
+      document.getElementById('amount').value = '';
+      document.getElementById('description').value = '';
+    })
+    .catch(error => console.error('Error adding transaction:', error));
+}
+  </script>
+</body>
+</html>
